@@ -3,315 +3,1079 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICCD AI Pro - Catalogazione Generativa</title>
+    <title>ICCD Censimento PG 4.01 — Gemini Vision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Josefin+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --ink: #1a1208;
+            --parchment: #f5f0e8;
+            --cream: #faf7f2;
+            --sienna: #8b4513;
+            --sienna-light: #c47a45;
+            --gold: #c9a84c;
+            --gold-light: #e8d5a3;
+            --verdigris: #3d7a6e;
+            --verdigris-light: #6aada0;
+            --stone: #9e9085;
+            --stone-light: #d4cfc8;
+            --shadow: rgba(26,18,8,0.15);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.4); }
-        h1 { color: #1e3c72; text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 3px solid #2a5298; }
-        
-        .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
-        @media(max-width: 768px) { .grid-2-col { grid-template-columns: 1fr; } }
-        
-        .config-box { background: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .config-box h3 { color: #2c3e50; margin-bottom: 15px; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-        
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 2px solid #cbd5e0; border-radius: 6px; font-family: inherit; font-size: 14px; transition: border-color 0.3s; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: #2a5298; }
-        
-        .upload { border: 3px dashed #2a5298; padding: 60px 40px; text-align: center; border-radius: 12px; cursor: pointer; background: #f0f4f8; transition: all 0.3s; margin: 25px 0; }
-        .upload:hover { background: #e2e8f0; border-color: #1e3c72; }
-        .upload h2 { color: #1e3c72; font-size: 22px; }
-        
-        .file-info { background: #d4edda; border-left: 5px solid #28a745; padding: 15px; border-radius: 6px; margin: 15px 0; display: none; color: #155724; font-weight: bold; }
-        
-        .btn { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 18px 40px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.3s, transform 0.1s; }
-        .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-2px); }
-        .btn:disabled { background: #a0aec0; cursor: not-allowed; transform: none; }
-        
-        .progress { width: 100%; height: 30px; background: #edf2f7; border-radius: 15px; overflow: hidden; margin: 25px 0; display: none; border: 1px solid #cbd5e0; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, #28a745, #20c997); width: 0%; text-align: center; color: white; line-height: 30px; font-weight: bold; transition: width 0.4s ease; }
-        
-        #output { margin-top: 40px; border: 3px solid #2a5298; padding: 40px; border-radius: 12px; display: none; background: #fff; }
-        
-        .elemento { background: #fff; padding: 30px; margin: 30px 0; border-top: 5px solid #2a5298; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border-radius: 0 0 8px 8px; }
-        .elemento img { max-width: 100%; max-height: 500px; height: auto; border-radius: 8px; margin: 20px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: block; }
-        
-        /* Tipografia Output */
-        .desc { line-height: 1.8; color: #333; margin-top: 25px; text-align: justify; font-size: 16px; }
-        .desc h2 { color: #1e3c72; margin: 30px 0 15px 0; font-size: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
-        .desc h3 { color: #2a5298; margin: 20px 0 10px 0; font-size: 18px; }
-        .desc p { margin-bottom: 15px; }
-        .desc strong { color: #000; }
-        
-        /* Box Evidenziato per Ipotesi/Verifiche */
-        .da-verificare { background-color: #fff8e1; border-left: 6px solid #ffb300; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0; font-style: italic; color: #5d4037; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .da-verificare strong { color: #e65100; display: block; margin-bottom: 10px; font-style: normal; font-size: 17px; text-transform: uppercase; }
-        
-        .error-msg { background: #ffebee; border-left: 5px solid #d32f2f; padding: 15px; margin: 15px 0; color: #b71c1c; border-radius: 4px; }
+
+        body {
+            font-family: 'Josefin Sans', sans-serif;
+            background-color: var(--ink);
+            background-image:
+                radial-gradient(ellipse at 20% 10%, rgba(139,69,19,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(61,122,110,0.12) 0%, transparent 50%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: var(--ink);
+        }
+
+        .wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ---- HEADER ---- */
+        .masthead {
+            text-align: center;
+            margin-bottom: 48px;
+            position: relative;
+        }
+        .masthead::before {
+            content: '';
+            display: block;
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, var(--gold));
+            margin: 0 auto 24px;
+        }
+        .masthead-label {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.35em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .masthead h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(32px, 5vw, 54px);
+            font-weight: 300;
+            color: var(--parchment);
+            line-height: 1.1;
+            letter-spacing: 0.02em;
+        }
+        .masthead h1 em {
+            font-style: italic;
+            color: var(--gold);
+        }
+        .masthead-sub {
+            margin-top: 14px;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: var(--stone);
+            text-transform: uppercase;
+        }
+        .masthead-rule {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .masthead-rule span {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold-light), transparent);
+        }
+        .masthead-rule i {
+            width: 6px;
+            height: 6px;
+            background: var(--gold);
+            transform: rotate(45deg);
+            display: block;
+        }
+
+        /* ---- CARD ---- */
+        .card {
+            background: var(--cream);
+            border-radius: 3px;
+            padding: 40px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 0 var(--gold-light), 0 8px 40px var(--shadow);
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 3px;
+            border: 1px solid rgba(201,168,76,0.25);
+            pointer-events: none;
+        }
+
+        .section-title {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--sienna);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--gold-light), transparent);
+        }
+
+        /* ---- FORM ---- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-grid.full { grid-template-columns: 1fr; }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--stone);
+        }
+        .field input,
+        .field textarea,
+        .field select {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 300;
+            color: var(--ink);
+            background: var(--parchment);
+            border: 1px solid var(--stone-light);
+            border-radius: 2px;
+            padding: 12px 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            width: 100%;
+        }
+        .field input:focus,
+        .field textarea:focus,
+        .field select:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+        }
+        .field textarea { resize: vertical; line-height: 1.6; }
+        .field select { cursor: pointer; }
+        .field input[type="password"] { letter-spacing: 0.08em; }
+
+        .model-select-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            border: 1px solid var(--stone-light);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .model-option {
+            position: relative;
+        }
+        .model-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .model-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 14px 10px;
+            cursor: pointer;
+            background: var(--parchment);
+            border-right: 1px solid var(--stone-light);
+            transition: background 0.2s, color 0.2s;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--stone);
+        }
+        .model-option:last-child label { border-right: none; }
+        .model-option label .model-name {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+        }
+        .model-option input[type="radio"]:checked + label {
+            background: var(--ink);
+            color: var(--gold);
+        }
+
+        /* ---- UPLOAD ---- */
+        .upload-zone {
+            border: 2px dashed var(--stone-light);
+            border-radius: 3px;
+            padding: 48px 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--parchment);
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(201,168,76,0) 0%, rgba(201,168,76,0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .upload-zone:hover {
+            border-color: var(--gold);
+        }
+        .upload-zone:hover::before { opacity: 1; }
+        .upload-zone.dragover {
+            border-color: var(--verdigris);
+            background: rgba(61,122,110,0.05);
+        }
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            opacity: 0.4;
+        }
+        .upload-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 300;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+        .upload-hint {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: var(--stone);
+            text-transform: uppercase;
+        }
+
+        .file-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .file-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--ink);
+            color: var(--parchment);
+            padding: 6px 14px;
+            border-radius: 2px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+        }
+        .file-pill button {
+            background: none;
+            border: none;
+            color: var(--stone);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .file-pill button:hover { color: var(--sienna-light); }
+
+        /* ---- BUTTON ---- */
+        .btn-primary {
+            width: 100%;
+            background: var(--ink);
+            color: var(--parchment);
+            border: 1px solid var(--gold-light);
+            padding: 18px 40px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--sienna) 0%, var(--gold) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-primary:hover:not(:disabled)::before { opacity: 1; }
+        .btn-primary span { position: relative; z-index: 1; }
+        .btn-primary:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-export {
+            width: 100%;
+            background: var(--verdigris);
+            color: var(--parchment);
+            border: 1px solid var(--verdigris-light);
+            padding: 16px 40px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+            margin-bottom: 32px;
+        }
+        .btn-export:hover { background: var(--verdigris-light); color: var(--ink); }
+
+        /* ---- PROGRESS ---- */
+        .progress-wrap {
+            display: none;
+            margin-top: 24px;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .progress-label span {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: var(--stone);
+            text-transform: uppercase;
+        }
+        .progress-track {
+            width: 100%;
+            height: 3px;
+            background: var(--stone-light);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sienna), var(--gold));
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .progress-status {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--stone);
+            font-style: italic;
+            letter-spacing: 0.05em;
+            min-height: 18px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--stone-light);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ---- OUTPUT ---- */
+        #output { display: none; }
+
+        .scheda-header {
+            background: var(--ink);
+            padding: 48px 40px;
+            border-radius: 3px;
+            text-align: center;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .scheda-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 60%);
+        }
+        .scheda-header .norm {
+            font-size: 10px;
+            letter-spacing: 0.4em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .scheda-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            font-weight: 300;
+            color: var(--parchment);
+            letter-spacing: 0.05em;
+        }
+        .scheda-header .site {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            color: var(--gold);
+            font-style: italic;
+            margin-top: 8px;
+        }
+        .scheda-header .meta {
+            margin-top: 16px;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: var(--stone);
+            text-transform: uppercase;
+        }
+
+        .elemento {
+            background: var(--cream);
+            border-radius: 3px;
+            margin-bottom: 32px;
+            overflow: hidden;
+            box-shadow: 0 2px 0 var(--gold-light), 0 8px 40px var(--shadow);
+        }
+        .elemento-header {
+            background: var(--parchment);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gold-light);
+        }
+        .tipo-badge {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 2px;
+        }
+        .tipo-badge.botanico {
+            background: rgba(61,122,110,0.12);
+            color: var(--verdigris);
+            border: 1px solid rgba(61,122,110,0.3);
+        }
+        .tipo-badge.architettonico {
+            background: rgba(139,69,19,0.1);
+            color: var(--sienna);
+            border: 1px solid rgba(139,69,19,0.25);
+        }
+        .elemento-counter {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: var(--stone);
+            text-transform: uppercase;
+        }
+
+        .elemento-body {
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 32px;
+        }
+        @media (max-width: 700px) {
+            .elemento-body { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .model-select-group { grid-template-columns: 1fr; }
+            .card { padding: 24px 20px; }
+        }
+
+        .elemento-img-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .elemento-img {
+            width: 100%;
+            border-radius: 2px;
+            box-shadow: 0 4px 20px var(--shadow);
+            display: block;
+        }
+        .img-caption {
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            color: var(--stone);
+            text-transform: uppercase;
+            word-break: break-all;
+        }
+
+        .elemento-desc {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--ink);
+        }
+
+        /* Markdown rendering inside desc */
+        .elemento-desc h3 {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--sienna);
+            margin: 28px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--gold-light);
+        }
+        .elemento-desc h3:first-child { margin-top: 0; }
+        .elemento-desc p { margin-bottom: 12px; text-align: justify; }
+        .elemento-desc em { font-style: italic; color: var(--sienna); }
+        .elemento-desc strong { font-weight: 700; }
+        .elemento-desc ul {
+            margin: 8px 0 12px 20px;
+            list-style: none;
+        }
+        .elemento-desc ul li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 6px;
+        }
+        .elemento-desc ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 5px;
+            height: 1px;
+            background: var(--gold);
+        }
+        .error-card {
+            background: #fff5f5;
+            border: 1px solid #ffcccc;
+            border-left: 4px solid #c0392b;
+            padding: 16px 20px;
+            border-radius: 2px;
+            font-size: 13px;
+            color: #c0392b;
+        }
+
+        .model-used-tag {
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            color: var(--stone);
+            text-transform: uppercase;
+            text-align: right;
+            margin-top: 8px;
+            font-family: 'Josefin Sans', sans-serif;
+        }
+
+        /* ---- NOTICE ---- */
+        .notice {
+            background: rgba(201,168,76,0.08);
+            border: 1px solid rgba(201,168,76,0.25);
+            border-left: 3px solid var(--gold);
+            padding: 14px 18px;
+            border-radius: 2px;
+            font-size: 12px;
+            color: var(--stone);
+            line-height: 1.7;
+            letter-spacing: 0.02em;
+        }
+        .notice strong { color: var(--ink); font-weight: 600; }
+        .notice a { color: var(--sienna); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🏛️ ICCD AI Professional - Generatore Relazioni</h1>
-        
-        <div class="grid-2-col">
-            <div class="config-box">
-                <h3>⚙️ Configurazione Motore AI</h3>
-                <label for="apiKey"><strong>🔑 API Key (Google AI Studio)</strong></label>
-                <input type="password" id="apiKey" placeholder="AIzaSy...">
-                
-                <label for="aiModel"><strong>🧠 Modello AI</strong></label>
-                <select id="aiModel">
-                    <option value="gemini-1.5-flash">⚡ Gemini 1.5 Flash (Consigliato: Veloce e Stabile)</option>
-                    <option value="gemini-1.5-pro-latest">🔬 Gemini 1.5 Pro Latest (Massima precisione)</option>
-                </select>
-                
-                <label for="tipo"><strong>📸 Categoria Bene</strong></label>
-                <select id="tipo">
-                    <option value="architettonico">🏛️ Architettonico / Arredi Scultorei</option>
-                    <option value="botanico">🌿 Botanico / Paesaggistico</option>
-                </select>
+<div class="wrapper">
+
+    <!-- MASTHEAD -->
+    <div class="masthead">
+        <p class="masthead-label">Istituto Centrale per il Catalogo e la Documentazione</p>
+        <h1>Censimento <em>Professionale</em></h1>
+        <p class="masthead-sub">Normativa ICCD &mdash; Scheda PG 4.01 &mdash; Giardini Storici</p>
+        <div class="masthead-rule"><span></span><i></i><span></span></div>
+    </div>
+
+    <!-- CONFIG CARD -->
+    <div class="card">
+        <div class="section-title">Configurazione Modello AI</div>
+
+        <div class="notice" style="margin-bottom: 24px;">
+            <strong>Informazioni API:</strong> Gemini Flash/Pro funzionano direttamente dal browser (CORS aperto). Claude API richiede un backend proxy. Ottieni la chiave gratuita su <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> (Gemini) o su <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> (Claude, a pagamento).
+        </div>
+
+        <div class="model-select-group" style="margin-bottom: 20px;">
+            <div class="model-option">
+                <input type="radio" name="provider" id="m-flash" value="gemini-1.5-flash" checked>
+                <label for="m-flash">
+                    <span class="model-name">Gemini 1.5 Flash</span>
+                    <span>Veloce — Gratuito</span>
+                </label>
             </div>
-            
-            <div class="config-box">
-                <h3>📍 Dati di Contesto del Sito</h3>
-                <input type="text" id="siteName" placeholder="Nome Sito (es. Villa Cimbrone)" value="Villa Cimbrone">
-                <input type="text" id="location" placeholder="Località (es. Ravello, SA)" value="Ravello (SA)">
-                <input type="text" id="areaName" placeholder="Area specifica (es. Rose Terrace)" value="Rose Terrace">
-                <textarea id="context" rows="3" placeholder="Background storico per istruire l'IA...">Giardino realizzato su commissione di Lord Grimthorpe tra 1904 e 1917, con intervento dell'architetto Nicola Mansi. Impianto romantico all'inglese con elementi eclettici e di reimpiego.</textarea>
+            <div class="model-option">
+                <input type="radio" name="provider" id="m-pro" value="gemini-1.5-pro">
+                <label for="m-pro">
+                    <span class="model-name">Gemini 1.5 Pro</span>
+                    <span>Migliore qualita</span>
+                </label>
+            </div>
+            <div class="model-option">
+                <input type="radio" name="provider" id="m-claude" value="claude">
+                <label for="m-claude">
+                    <span class="model-name">Claude 3.5 Sonnet</span>
+                    <span>Proxy richiesto</span>
+                </label>
             </div>
         </div>
 
-        <div class="upload" onclick="document.getElementById('files').click()">
-            <h2>📸 Clicca qui per caricare le Fotografie</h2>
-            <p style="color: #64748b; margin-top: 10px;">Formati supportati: JPG, PNG. Puoi caricare più foto contemporaneamente.</p>
-        </div>
-        <input type="file" id="files" multiple accept="image/*" style="display: none;">
-
-        <div class="file-info" id="fileInfo"></div>
-        <button class="btn" id="processBtn" onclick="process()" disabled>🔍 Genera Schedatura ICCD</button>
-
-        <div class="progress" id="progress">
-            <div class="progress-bar" id="progressBar">0%</div>
-        </div>
-
-        <div id="output">
-            <button class="btn" style="background: #28a745; margin-bottom: 30px;" onclick="copyToClipboard()">📋 Copia Tutto per Word</button>
-            <div id="outputContent"></div>
+        <div class="form-grid">
+            <div class="field">
+                <label>Chiave API Gemini / Claude</label>
+                <input type="password" id="apiKey" placeholder="AIzaSy... oppure sk-ant-...">
+            </div>
+            <div class="field" id="proxyField" style="display:none;">
+                <label>URL Proxy Backend (solo Claude)</label>
+                <input type="text" id="proxyUrl" placeholder="https://mio-proxy.vercel.app/api/claude">
+            </div>
         </div>
     </div>
 
-    <script>
-        let files = [];
-        let results = [];
+    <!-- CATALOGAZIONE CARD -->
+    <div class="card">
+        <div class="section-title">Dati di Catalogazione</div>
 
-        document.getElementById('files').addEventListener('change', (e) => {
-            files = [...e.target.files];
-            if (files.length > 0) {
-                document.getElementById('processBtn').disabled = false;
-                document.getElementById('fileInfo').style.display = 'block';
-                document.getElementById('fileInfo').innerHTML = `✅ ${files.length} fotografia/e pronta/e per l'analisi.`;
+        <div class="form-grid">
+            <div class="field">
+                <label>Nome Sito / Complesso</label>
+                <input type="text" id="siteName" value="Villa Cimbrone" placeholder="es. Villa Rufolo">
+            </div>
+            <div class="field">
+                <label>Localita</label>
+                <input type="text" id="location" value="Ravello (SA)" placeholder="Comune (Provincia)">
+            </div>
+            <div class="field">
+                <label>Area / Settore specifico</label>
+                <input type="text" id="areaName" value="Rose Terrace" placeholder="es. Giardino Nord">
+            </div>
+            <div class="field">
+                <label>Tipologia Catalogazione</label>
+                <select id="tipo">
+                    <option value="architettonico">Architettonico — Manufatti e Arredi</option>
+                    <option value="botanico">Botanico — Patrimonio Vegetale</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field" style="margin-top: 16px;">
+            <label>Contesto Storico (piu dettagli = descrizione migliore)</label>
+            <textarea id="context" rows="4" placeholder="Descrivere committente, periodo, architetti, stile, caratteristiche salienti...">Giardino realizzato su commissione di Lord Grimthorpe (Ernest William Beckett, 1856-1917) tra 1904 e 1917, con intervento dell'architetto ravellese Nicola Mansi. Collaborazione documentata di Vita Sackville-West (Bloomsbury Group). Impianto eclettico con commistione di elementi gotici, moreschi, veneziani e classici. Rose Terrace: giardino formale all'italiana con quattro statue perimetrali (Flora, Leda con cigno da Leonardo, lottatori Damosseno e Greucante) e meridiana solare al centro.</textarea>
+        </div>
+
+        <div class="field" style="margin-top: 16px;">
+            <label>Nome Elemento (opzionale — se noto in anticipo)</label>
+            <input type="text" id="nomeElemento" placeholder="es. Meridiana solare, Balaustra arabeggiante, Cipresso secolare...">
+        </div>
+    </div>
+
+    <!-- UPLOAD CARD -->
+    <div class="card">
+        <div class="section-title">Fotografie di Documentazione</div>
+
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('files').click()">
+            <svg class="upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="12" width="32" height="24" rx="2" stroke="#9e9085" stroke-width="1.5"/>
+                <circle cx="18" cy="22" r="3" stroke="#9e9085" stroke-width="1.5"/>
+                <path d="M8 32l9-8 6 5 5-4 10 7" stroke="#9e9085" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M24 6v12M20 9l4-3 4 3" stroke="#c9a84c" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+            <p class="upload-title">Trascina qui le fotografie</p>
+            <p class="upload-hint">o clicca per selezionare &mdash; JPG, PNG, WebP &mdash; massima qualita</p>
+        </div>
+        <input type="file" id="files" multiple accept="image/*" style="display:none;">
+        <div class="file-pills" id="filePills"></div>
+    </div>
+
+    <button class="btn-primary" id="processBtn" onclick="startProcess()" disabled>
+        <span id="btnText">Avvia Catalogazione ICCD Professionale</span>
+    </button>
+
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label">
+            <span>Elaborazione in corso</span>
+            <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-status" id="progressStatus"></div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div id="output">
+        <button class="btn-export" onclick="exportToClipboard()">Esporta Schede — Copia per Word</button>
+        <div id="schedeHeader"></div>
+        <div id="schedeContent"></div>
+    </div>
+
+</div>
+
+<script>
+    let selectedFiles = [];
+    let results = [];
+
+    // Provider toggle
+    document.querySelectorAll('input[name="provider"]').forEach(r => {
+        r.addEventListener('change', () => {
+            const isClaude = document.querySelector('input[name="provider"]:checked').value === 'claude';
+            document.getElementById('proxyField').style.display = isClaude ? 'block' : 'none';
+        });
+    });
+
+    // File handling
+    const uploadZone = document.getElementById('uploadZone');
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        addFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('image/')));
+    });
+    document.getElementById('files').addEventListener('change', e => {
+        addFiles([...e.target.files]);
+    });
+
+    function addFiles(newFiles) {
+        newFiles.forEach(f => {
+            if (!selectedFiles.find(x => x.name === f.name && x.size === f.size)) {
+                selectedFiles.push(f);
             }
         });
+        renderFilePills();
+        document.getElementById('processBtn').disabled = selectedFiles.length === 0;
+    }
 
-        async function process() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const model = document.getElementById('aiModel').value;
-            const ctx = {
-                siteName: document.getElementById('siteName').value.trim(),
-                location: document.getElementById('location').value.trim(),
-                areaName: document.getElementById('areaName').value.trim(),
-                context: document.getElementById('context').value.trim(),
-                tipo: document.getElementById('tipo').value
-            };
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        renderFilePills();
+        document.getElementById('processBtn').disabled = selectedFiles.length === 0;
+    }
 
-            if (!apiKey) {
-                alert('⚠️ Inserisci la tua API Key di Google AI Studio.');
-                return;
-            }
+    function renderFilePills() {
+        const container = document.getElementById('filePills');
+        container.innerHTML = selectedFiles.map((f, i) => `
+            <div class="file-pill">
+                <span>${truncate(f.name, 28)}</span>
+                <button onclick="removeFile(${i})" title="Rimuovi">x</button>
+            </div>
+        `).join('');
+    }
 
-            const btn = document.getElementById('processBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Analisi IA in corso (attendere)...';
-            document.getElementById('progress').style.display = 'block';
-            document.getElementById('output').style.display = 'none';
-            results = [];
+    function truncate(str, n) { return str.length > n ? str.substring(0, n) + '...' : str; }
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const bar = document.getElementById('progressBar');
-                bar.style.width = Math.round(((i) / files.length) * 100) + '%';
-                bar.textContent = `Elaborazione foto ${i + 1} di ${files.length}...`;
+    // ---- MAIN PROCESS ----
+    async function startProcess() {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const provider = document.querySelector('input[name="provider"]:checked').value;
+        const siteName = document.getElementById('siteName').value.trim();
+        const location = document.getElementById('location').value.trim();
+        const areaName = document.getElementById('areaName').value.trim();
+        const context = document.getElementById('context').value.trim();
+        const tipo = document.getElementById('tipo').value;
+        const nomeElemento = document.getElementById('nomeElemento').value.trim();
 
-                try {
-                    const base64Image = await fileToBase64(file);
-                    const desc = await analyzeWithGemini(base64Image, file.type, apiKey, model, ctx);
-                    results.push({file, desc, success: true});
-                } catch (error) {
-                    console.error("Errore Generazione:", error);
-                    let errorHtml = `<div class="error-msg"><strong>Errore API:</strong> ${error.message}<br><em>Suggerimento: Prova a cambiare il 'Modello AI' dal menu a tendina in alto.</em></div>`;
-                    results.push({file, desc: errorHtml, success: false});
+        if (!apiKey) { alert('Inserisci la chiave API.'); return; }
+        if (!siteName || !location) { alert('Compila Nome Sito e Localita.'); return; }
+        if (selectedFiles.length === 0) { alert('Carica almeno una fotografia.'); return; }
+
+        const btn = document.getElementById('processBtn');
+        btn.disabled = true;
+        document.getElementById('btnText').textContent = 'Catalogazione in corso...';
+        document.getElementById('progressWrap').style.display = 'block';
+        document.getElementById('output').style.display = 'none';
+        results = [];
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const pct = Math.round(((i) / selectedFiles.length) * 100);
+            setProgress(pct, `<span class="spinner"></span>Analisi elemento ${i+1} di ${selectedFiles.length}: ${truncate(file.name, 40)}`);
+
+            try {
+                let desc;
+                if (provider === 'claude') {
+                    desc = await analyzeWithClaude(file, apiKey, tipo, {siteName, location, areaName, context, nomeElemento});
+                } else {
+                    desc = await analyzeWithGemini(file, apiKey, provider, tipo, {siteName, location, areaName, context, nomeElemento});
                 }
-                
-                bar.style.width = Math.round(((i + 1) / files.length) * 100) + '%';
+                results.push({ file, desc, tipo, provider, error: false });
+            } catch (err) {
+                results.push({ file, desc: err.message, tipo, provider, error: true });
             }
-
-            displayResults(ctx);
-            document.getElementById('progress').style.display = 'none';
-            document.getElementById('output').style.display = 'block';
-            btn.disabled = false;
-            btn.textContent = '✅ Genera Nuova Schedatura';
-            document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
         }
 
-        async function analyzeWithGemini(base64Image, mimeType, apiKey, model, ctx) {
-            const base64Data = base64Image.split(',')[1];
+        setProgress(100, 'Catalogazione completata.');
+        renderResults(siteName, location, areaName);
+        document.getElementById('output').style.display = 'block';
+        document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+        btn.disabled = false;
+        document.getElementById('btnText').textContent = 'Nuova Catalogazione';
+    }
 
-            const systemPrompt = `
-                Agisci come un Esperto Catalogatore Senior del Ministero dei Beni Culturali, specializzato nello standard ICCD PG 4.01.
-                Il tuo compito è analizzare la fotografia fornita e scrivere una scheda descrittiva rigorosa e dettagliata (minimo 1000 parole).
-                Ambito della catalogazione: ${ctx.tipo.toUpperCase()}.
+    function setProgress(pct, status) {
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressPct').textContent = pct + '%';
+        document.getElementById('progressStatus').innerHTML = status;
+    }
 
-                DATI DI CONTESTO REALI DA INTEGRARE:
-                - Complesso: ${ctx.siteName}
-                - Località: ${ctx.location}
-                - Settore specifico: ${ctx.areaName}
-                - Background Storico: ${ctx.context}
+    // ---- GEMINI API ----
+    async function analyzeWithGemini(file, apiKey, model, tipo, ctx) {
+        const base64 = await fileToBase64(file);
+        const mimeType = file.type || 'image/jpeg';
+        const imageData = base64.split(',')[1];
 
-                REGOLE STRUTTURALI RIGIDE (Dividi in 6 paragrafi con Titolo 2):
-                ## 1. TIPOLOGIA ICCD E CLASSIFICAZIONE
-                ## 2. MATERIALI E TECNICA ESECUTIVA (se architettonico) / DIMENSIONI
-                ## 3. CARATTERI STILISTICI (se architettonico) / MORFOLOGIA (se botanico)
-                ## 4. DATAZIONE E ATTRIBUZIONE / EPOCA DI IMPIANTO
-                ## 5. RUOLO NEL SISTEMA DEL GIARDINO STORICO
-                ## 6. STATO DI CONSERVAZIONE E DEGRADO (Analizza chirurgicamente la foto per patine, lesioni, mancanze).
+        const prompt = buildICCDPrompt(tipo, ctx, file.name);
 
-                REGOLA SULLE IPOTESI [DA_VERIFICARE]:
-                Quando fai una supposizione non certa dalla foto (es. un materiale nascosto, un anno preciso, attribuzione), ISOLA QUEL TESTO in questo blocco esatto:
-                [DA_VERIFICARE] Titolo dell'ipotesi: spiegazione... [/DA_VERIFICARE]
-                
-                Scrivi in modo accademico, restituisci solo il testo formattato in Markdown.
-            `;
-
-            const requestBody = {
-                contents: [{
-                    parts: [
-                        { text: systemPrompt },
-                        { inlineData: { mimeType: mimeType, data: base64Data } }
-                    ]
-                }],
-                generationConfig: { temperature: 0.25 } // Bassa creatività, alta precisione tecnica
-            };
-
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Errore di connessione a Google AI");
+        const body = {
+            contents: [{
+                parts: [
+                    { inline_data: { mime_type: mimeType, data: imageData } },
+                    { text: prompt }
+                ]
+            }],
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 4096,
+                topP: 0.9
             }
+        };
 
-            if (!data.candidates || data.candidates.length === 0) {
-                throw new Error("L'IA ha bloccato la risposta (possibile violazione policy sui contenuti).");
-            }
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
 
-            return data.candidates[0].content.parts[0].text;
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(`Gemini API ${resp.status}: ${err.error?.message || 'Errore sconosciuto'}`);
         }
 
-        function displayResults(ctx) {
-            const content = document.getElementById('outputContent');
-            let html = `
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h1 style="color: #1e3c72; font-size: 28px; margin-bottom: 5px;">RELAZIONE ICCD PG 4.01</h1>
-                    <h2 style="color: #2a5298; font-size: 22px;">${ctx.siteName}</h2>
-                    <p style="color: #64748b; font-size: 16px; margin-top: 10px;">
-                        ${ctx.location} | Settore: ${ctx.areaName}<br>
-                        Generato il: ${new Date().toLocaleDateString('it-IT')}
-                    </p>
+        const data = await resp.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Risposta Gemini vuota o bloccata dai filtri di sicurezza.');
+        return text;
+    }
+
+    // ---- CLAUDE API (via proxy) ----
+    async function analyzeWithClaude(file, apiKey, tipo, ctx) {
+        const proxyUrl = document.getElementById('proxyUrl').value.trim();
+        if (!proxyUrl) throw new Error('Inserisci URL del proxy backend per Claude.');
+
+        const base64 = await fileToBase64(file);
+        const mimeType = file.type || 'image/jpeg';
+        const imageData = base64.split(',')[1];
+        const prompt = buildICCDPrompt(tipo, ctx, file.name);
+
+        const body = {
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 4096,
+            messages: [{
+                role: 'user',
+                content: [
+                    { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageData } },
+                    { type: 'text', text: prompt }
+                ]
+            }]
+        };
+
+        const resp = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(`Claude API ${resp.status}: ${err.error?.message || 'Controlla il proxy'}`);
+        }
+
+        const data = await resp.json();
+        const text = data?.content?.[0]?.text;
+        if (!text) throw new Error('Risposta Claude vuota.');
+        return text;
+    }
+
+    // ---- PROMPT COSTRUTTORE ----
+    function buildICCDPrompt(tipo, ctx, filename) {
+        const tipoLabel = tipo === 'botanico' ? 'botanico (patrimonio vegetale)' : 'architettonico-decorativo (manufatti, arredi, sculture, strutture)';
+        const nomeHint = ctx.nomeElemento ? `L'elemento fotografato e presumibilmente: "${ctx.nomeElemento}".` : 'Identifica l\'elemento fotografato sulla base dell\'analisi visiva.';
+
+        return `Sei un catalografo esperto dell'ICCD (Istituto Centrale per il Catalogo e la Documentazione) specializzato in giardini storici italiani. Devi produrre una scheda di catalogazione professionale secondo la normativa ICCD PG 4.01.
+
+CONTESTO:
+- Sito: ${ctx.siteName}, ${ctx.location}
+- Area specifica: ${ctx.areaName}
+- Tipologia catalogazione: ${tipoLabel}
+- ${nomeHint}
+- Contesto storico: ${ctx.context}
+- File fotografia: ${filename}
+
+ANALIZZA l'immagine fornita con massima attenzione ai dettagli visivi (materiali, tecniche costruttive, stato conservativo, stile, caratteri formali, decorazioni, contesto spaziale circostante).
+
+PRODUCI una scheda ICCD PG 4.01 strutturata in ESATTAMENTE 6 sezioni come segue. Ogni sezione deve essere approfondita, tecnica, con terminologia specialistica appropriata. La descrizione totale deve essere di almeno 1500 parole.
+
+### 1. TIPOLOGIA ICCD E CLASSIFICAZIONE
+Classifica l'elemento secondo le categorie ICCD (esempio: OR - Orologio solare; DE - Elemento di arredo; MD - Manufatto architettonico; BV - Bene vegetale, ecc.). Descrivi tipologia specifica, sottotipo funzionale, collocazione topografica nel sistema del giardino e relazioni con gli elementi circostanti visibili in fotografia.
+
+### 2. MATERIALI, TECNICA ESECUTIVA E DIMENSIONI
+Descrivi con precisione i materiali rilevabili dall'analisi fotografica (pietra, marmo, laterizio, metallo, legno, intonaco, ecc.), la tecnica esecutiva (lavorazione, finitura, assemblaggio), le dimensioni stimate fotograficamente con valutazioni comparative. Includi dettagli tecnici specifici osservabili (giunti, texture, modanature, incisioni, ecc.).
+
+### 3. CARATTERI STILISTICI E ICONOGRAFICI
+Analizza lo stile (eclettico, classico, romantico, barocco, moresco, ecc.), i caratteri formali, i motivi decorativi, i riferimenti iconografici, il repertorio ornamentale. Contesto nell'ambito della storia dell'arte e dell'architettura paesaggistica. Confronti tipologici con esempi analoghi.
+
+### 4. DATAZIONE E ATTRIBUZIONE
+Proponi una datazione motivata sulla base dei caratteri stilistici, dei materiali, del contesto storico fornito. Indicazioni sull'ambito culturale di produzione, possibili maestranze o botteghe, riferimenti documentari. Distingui tra elementi coevi al progetto originario ed eventuali elementi di reimpiego o aggiunte successive.
+
+### 5. FUNZIONE E RUOLO NEL SISTEMA DEL GIARDINO STORICO
+Analizza la funzione primaria e le funzioni secondarie (pratiche, simboliche, scenografiche, contemplative). Relazioni visuali e spaziali con altri elementi del giardino. Ruolo nel percorso di visita e nell'esperienza estetica complessiva. Valenza culturale e filosofica nel contesto del giardino romantico all'inglese.
+
+### 6. STATO DI CONSERVAZIONE E FENOMENI DI DEGRADO
+Descrivi dettagliatamente lo stato di conservazione rilevabile dall'esame fotografico: fenomeni di degrado biologico (patine, licheni, muschi, colonizzazione vegetale), fisico-chimico (erosione, efflorescenze, distacchi, fessurazioni, ossidazioni), meccanico (rotture, abrasioni, lacune). Analizza i fattori di rischio ambientali specifici del contesto costiero campano. Formula raccomandazioni per interventi conservativi prioritari e manutenzione programmata. Suggerisci indagini diagnostiche specialistiche.
+
+IMPORTANTE: 
+- Usa terminologia tecnica specialistica (dendrologica, gnomonica, lapidea, mineralogica, restaurativa secondo le norme UNI)
+- Sii preciso e analitico, non generico
+- Basa ogni affermazione su elementi visivamente rilevabili nell'immagine o sul contesto storico fornito
+- Usa il corsivo per i nomi scientifici latini
+- La risposta deve essere SOLO la scheda strutturata, senza introduzioni o conclusioni aggiuntive
+- Scrivi in italiano formale e tecnico`;
+    }
+
+    // ---- RENDER RESULTS ----
+    function renderResults(site, loc, area) {
+        const today = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+
+        document.getElementById('schedeHeader').innerHTML = `
+            <div class="scheda-header">
+                <p class="norm">Scheda ICCD &mdash; Normativa PG 4.01</p>
+                <h2>Censimento Professionale</h2>
+                <p class="site">${site}</p>
+                <p class="meta">${loc} &nbsp;&mdash;&nbsp; Settore: ${area} &nbsp;&mdash;&nbsp; Data rilevamento: ${today}</p>
+            </div>
+        `;
+
+        const container = document.getElementById('schedeContent');
+        container.innerHTML = '';
+
+        results.forEach((r, i) => {
+            const el = document.createElement('div');
+            el.className = 'elemento';
+
+            const badgeClass = r.tipo === 'botanico' ? 'botanico' : 'architettonico';
+            const badgeText = r.tipo === 'botanico' ? 'Catalogazione Botanica' : 'Catalogazione Architettonica';
+            const imgId = `result-img-${i}`;
+            const modelName = r.provider === 'claude' ? 'Claude 3.5 Sonnet' : (r.provider === 'gemini-1.5-pro' ? 'Gemini 1.5 Pro' : 'Gemini 1.5 Flash');
+
+            const descHtml = r.error
+                ? `<div class="error-card"><strong>Errore analisi:</strong> ${r.desc}</div>`
+                : markdownToHtml(r.desc);
+
+            el.innerHTML = `
+                <div class="elemento-header">
+                    <span class="tipo-badge ${badgeClass}">${badgeText}</span>
+                    <span class="elemento-counter">Elemento ${i + 1} di ${results.length}</span>
+                </div>
+                <div class="elemento-body">
+                    <div class="elemento-img-wrap">
+                        <img id="${imgId}" src="" alt="${r.file.name}" class="elemento-img">
+                        <p class="img-caption">${r.file.name}</p>
+                        <p class="model-used-tag">Analizzato con ${modelName}</p>
+                    </div>
+                    <div class="elemento-desc">${descHtml}</div>
                 </div>
             `;
+            container.appendChild(el);
 
-            results.forEach((r, i) => {
-                const imgId = `img_${i}`;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.getElementById(imgId);
-                    if (img) img.src = e.target.result;
-                };
-                reader.readAsDataURL(r.file);
-                
-                let formattedDesc = r.desc;
-                
-                if (r.success) {
-                    // Conversione da Markdown a HTML
-                    formattedDesc = formattedDesc
-                        // Gestione blocchi [DA_VERIFICARE]
-                        .replace(/\[DA_VERIFICARE\]([\s\S]*?)\[\/DA_VERIFICARE\]/g, (match, p1) => {
-                            let text = p1.trim();
-                            // Estrae un eventuale titolo prima dei due punti
-                            let title = "⚠️ DA VERIFICARE IN SITU / IPOTESI:";
-                            if(text.includes(':')) {
-                                let parts = text.split(':');
-                                title = "⚠️ " + parts[0] + ":";
-                                text = parts.slice(1).join(':').trim();
-                            }
-                            return `<div class="da-verificare"><strong>${title}</strong>${text}</div>`;
-                        })
-                        // Sostituzioni Markdown standard
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/## (.*?)\n/g, '<h2>$1</h2>')
-                        .replace(/# (.*?)\n/g, '<h2>$1</h2>')
-                        .replace(/\n\n/g, '</p><p>')
-                        .replace(/\n/g, '<br>');
-                        
-                    if (!formattedDesc.startsWith('<p>') && !formattedDesc.startsWith('<div') && !formattedDesc.startsWith('<h')) {
-                        formattedDesc = '<p>' + formattedDesc + '</p>';
-                    }
-                }
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.getElementById(imgId);
+                if (img) img.src = e.target.result;
+            };
+            reader.readAsDataURL(r.file);
+        });
+    }
 
-                html += `
-                    <div class="elemento">
-                        <img id="${imgId}" src="" alt="${r.file.name}">
-                        <div class="desc">
-                            ${formattedDesc}
-                        </div>
-                    </div>
-                `;
+    // ---- MARKDOWN ----
+    function markdownToHtml(text) {
+        if (!text) return '';
+        return text
+            .replace(/### (.*)/g, '<h3>$1</h3>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/^- (.+)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+            .replace(/\n{2,}/g, '</p><p>')
+            .replace(/^(?!<[hul])(.+)$/gm, '$1')
+            .replace(/^<\/p><p>(<h3>)/gm, '$1')
+            .replace(/<p><\/p>/g, '')
+            .replace(/(^|\n)([^<\n].+)/g, (m, pre, content) => {
+                if (content.startsWith('<')) return m;
+                return `${pre}<p>${content}</p>`;
             });
+    }
 
-            content.innerHTML = html;
-        }
+    // ---- EXPORT ----
+    function exportToClipboard() {
+        const el = document.getElementById('schedeContent');
+        const range = document.createRange();
+        range.selectNode(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        alert('Schede ICCD copiate negli appunti.\n\nApri Microsoft Word e premi Ctrl+V per incollare il documento formattato.');
+    }
 
-        function copyToClipboard() {
-            const content = document.getElementById('outputContent');
-            const range = document.createRange();
-            range.selectNode(content);
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-            
-            try {
-                document.execCommand('copy');
-                alert('✅ Relazione copiata con successo!\n\nApri Word e usa la scorciatoia Ctrl+V (o Cmd+V su Mac) per incollare. La formattazione e i box colorati verranno mantenuti.');
-            } catch(e) {
-                alert('⚠️ Il tuo browser non supporta la copia automatica. Seleziona il testo manualmente e fai Copia.');
-            }
-            window.getSelection().removeAllRanges();
-        }
+    // ---- UTILS ----
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
 
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-    </script>
+    console.log('ICCD Censimento Professionale — Gemini/Claude Vision caricato');
+</script>
 </body>
 </html>
