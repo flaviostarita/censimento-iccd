@@ -34,7 +34,7 @@
         <h1>🏛️ ICCD Censimento - AI Professionale</h1>
         
         <div class="alert">
-            <strong>✨ Nuovo: Google Gemini 2.0 Flash</strong><br>
+            <strong>✨ Nuovo: Google Gemini 1.5 Flash</strong><br>
             Descrizioni professionali dettagliate (1500-2500 parole) come un vero catalogatore ICCD esperto.<br>
             Analisi approfondita con terminologia tecnica, contesto storico e fenomeni di degrado specifici.
         </div>
@@ -149,7 +149,7 @@
 
             const prompt = buildICCDPrompt(tipo, ctx, file.name);
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
